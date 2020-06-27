@@ -1,8 +1,10 @@
 """
 CNN model for raw audio classification
+The model extracts mel-spectrogram online, and trains with it.
+The gradient flows smoothly to the raw time domain audio,
+so that adversarial samples can be generated in the time domain.
 
-Model contributed by: MITRE Corporation
-Adapted from: https://github.com/mravanelli/SincNet
+Model contributed by: USC SAIL (sail.usc.edu)
 """
 import logging
 
@@ -12,7 +14,7 @@ import torch
 
 from armory.data.utils import maybe_download_weights_from_s3
 
-# Load model from MITRE external repo: https://github.com/hkakitani/SincNet
+# Load model from USC SAIL external repo: https://github.com/usc-sail/gard-eval-june2020
 # This needs to be defined in your config's `external_github_repo` field to be
 # downloaded and placed on the PYTHONPATH
 from SAIL import dnn_models
@@ -20,11 +22,8 @@ import pdb
 
 logger = logging.getLogger(__name__)
 
-# NOTE: Underlying dataset sample rate is 16 kHz. SincNet uses this SAMPLE_RATE to
-# determine internal filter high cutoff frequency.
-#SAMPLE_RATE = 8000
-#WINDOW_STEP_SIZE = 375
-#WINDOW_LENGTH = int(SAMPLE_RATE * WINDOW_STEP_SIZE / 1000)
+#TODO: eval time full len testing should be included
+#Now it trains and evals with 3s segments
 WINDOW_LENGTH=48000
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -46,12 +45,7 @@ def preprocessing_fn(batch):
         if signal_length < WINDOW_LENGTH:
            signal = np.concatenate((signal, np.zeros(WINDOW_LENGTH-signal_length)))
         else:
-            #np.random.seed(signal_length)
-            #signal_start = (
-            #    np.random.randint(signal_length / WINDOW_LENGTH - 1)
-            #    * WINDOW_LENGTH
-            #    % signal_length
-            #)
+            np.random.seed(signal_length)
             signal_start = np.random.randint(0, signal_length-WINDOW_LENGTH)
             signal_stop = signal_start + WINDOW_LENGTH
             signal = signal[signal_start:signal_stop]
@@ -60,10 +54,24 @@ def preprocessing_fn(batch):
 
     return np.array(processed_batch)
 
+def sail(weights_file=None):
+    pretrained = weights_file is not None
+    filepath = None
+    if pretrained:
+        filepath = maybe_download_weights_from_s3(weights_file)
+    sailNet = dnn_models.get_model(weights_file=filepath)
+    
+    if pretrained:
+        sailNet.eval()
+    else:
+        sailNet.train()
+
+    return sailNet
+
 
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
-    model = dnn_models.get_model(weights_file=weights_file, **model_kwargs)
+    model = sail(weights_file=weights_file, **model_kwargs)
     model.to(DEVICE)
 
     wrapped_model = PyTorchClassifier(

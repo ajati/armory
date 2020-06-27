@@ -19,15 +19,16 @@ from armory.scenarios.base import Scenario
 
 logger = logging.getLogger(__name__)
 
-##############JATI -- for offline run in hpc
-import sys, pdb, os, time, datetime, torch
-#sys.path.insert(0, "/scratch/jati/GARD/ARMORY/armory_tmp/external/")
-#sys.path.insert(0, "/scratch/jati/GARD/ARMORY/armory_tmp/external/SincNet")
-#sys.path.insert(0, "/scratch/jati/GARD/ARMORY/armory_tmp/external/SAIL")
-sys.path.insert(0, "/Users/arindamjati/Documents/work/codes/armory_fork/armory_tmp/external/")
-sys.path.insert(0, "/Users/arindamjati/Documents/work/codes/armory_fork/armory_tmp/external/SincNet")
-sys.path.insert(0, "/Users/arindamjati/Documents/work/codes/armory_fork/armory_tmp/external/SAIL")
+import numpy as np
 
+##############JATI -- for offline run in hpc
+#   import sys, pdb, os, time, datetime, torch
+#   #sys.path.insert(0, "/scratch/jati/GARD/ARMORY/armory_tmp/external/")
+#   #sys.path.insert(0, "/scratch/jati/GARD/ARMORY/armory_tmp/external/SincNet")
+#   #sys.path.insert(0, "/scratch/jati/GARD/ARMORY/armory_tmp/external/SAIL")
+#   sys.path.insert(0, "/nas/home/ajati/.armory/tmp/external/")
+#   sys.path.insert(0, "/nas/home/ajati/.armory/tmp/external/SAIL")
+#
 #JATI
 
 class AudioClassificationTask(Scenario):
@@ -83,16 +84,17 @@ class AudioClassificationTask(Scenario):
             defense = load_defense_wrapper(config["defense"], classifier)
             classifier = defense()
 
+        #HACK: to save model -- currently commenting it out
         #SAIL-JATI ----------------------------------
-        ts = time.time()
-        st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d-%H-%M-%S')
-        model_save_dir_ = os.path.join("/Users/arindamjati/Documents/work/codes/armory_fork/SAIL_ALR_models/", st+"/")
-        os.system("mkdir -p "+model_save_dir_)
-        torch.save(classifier._model._model.state_dict(), model_save_dir_+"/sail_alr_model_state_dict.pt")
-        torch.save(classifier._model._model, model_save_dir_+"/sail_alr_model.pt")
-        torch.save(classifier._optimizer.state_dict(), model_save_dir_+"/sail_alr_optim_state_dict.pt")
-        torch.save(classifier._optimizer, model_save_dir_+"/sail_alr_optim.pt")
-        #------------------------------------------- 
+        #ts = time.time()
+        #st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d-%H-%M-%S')
+        #model_save_dir_ = os.path.join("/nas/home/ajati/work/codes/SAIL_ALR_models/", st+"/")
+        #os.system("mkdir -p "+model_save_dir_)
+        #torch.save(classifier._model._model.state_dict(), model_save_dir_+"/sail_alr_model_state_dict.pt")
+        #torch.save(classifier._model._model, model_save_dir_+"/sail_alr_model.pt")
+        #torch.save(classifier._optimizer.state_dict(), model_save_dir_+"/sail_alr_optim_state_dict.pt")
+        #torch.save(classifier._optimizer, model_save_dir_+"/sail_alr_optim.pt")
+        ##------------------------------------------- 
 
         classifier.set_learning_phase(False)
 
@@ -134,6 +136,9 @@ class AudioClassificationTask(Scenario):
                 split_type="test",
                 preprocessing_fn=predict_preprocessing_fn,
             )
+
+        #JATI -- snr
+        snrs = []
         for x, y in tqdm(test_data, desc="Attack"):
             if attack_type == "preloaded":
                 x, x_adv = x
@@ -147,6 +152,11 @@ class AudioClassificationTask(Scenario):
             else:
                 x_adv = attack.generate(x=x)
 
+            #JATI - snr
+            noise = x_adv - x
+            snr = 10 * np.log10(np.mean(x**2) / np.mean(noise**2))
+            snrs.append(snr)
+
             y_pred_adv = classifier.predict(x_adv)
             if targeted:
                 # NOTE: does not remove data points where y == y_target
@@ -155,4 +165,8 @@ class AudioClassificationTask(Scenario):
                 metrics_logger.update_task(y, y_pred_adv, adversarial=True)
             metrics_logger.update_perturbation(x, x_adv)
         metrics_logger.log_task(adversarial=True, targeted=targeted)
+
+        mean_snr = np.mean(snrs)
+        logging.info(f"MEAN SNR of adversarial samples = {mean_snr}")
+
         return metrics_logger.results()

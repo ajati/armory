@@ -1,11 +1,5 @@
 """
-This module implements adversarial training following Madry's Protocol.
-| Paper link: https://arxiv.org/abs/1706.06083
-| Please keep in mind the limitations of defences. While adversarial training is widely regarded as a promising,
-    principled approach to making classifiers more robust (see https://arxiv.org/abs/1802.00420), very careful
-    evaluations are required to assess its effectiveness case by case (see https://arxiv.org/abs/1902.06705).
-
-This has been modified from ART by adding a fit_generator functionality
+This module calls the module that implements adversarial lipschitz regularization.
 """
 
 import logging
@@ -22,15 +16,6 @@ import pdb
 import numpy as np
 
 class AdversarialLipschitzRegularization(Trainer):
-    """
-    Class performing adversarial training following Madry's Protocol.
-    Paper link: https://arxiv.org/abs/1706.06083
-    Please keep in mind the limitations of defences. While adversarial training is
-    widely regarded as a promising, principled approach to making classifiers more
-    robust (see https://arxiv.org/abs/1802.00420), very careful evaluations are
-    required to assess its effectiveness case by case (see https://arxiv.org/abs/1902.06705).
-    """
-
     def __init__(self, classifier=None, alr_weight=1.0):
         self.classifier  = classifier 
         self.model = classifier._model._model
