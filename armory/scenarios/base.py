@@ -148,7 +148,8 @@ def _scenario_setup(config: dict):
     runtime_paths = paths.runtime_paths()
 
     scenario_output_dir = os.path.join(runtime_paths.output_dir, config["eval_id"])
-    scenario_tmp_dir = os.path.join(runtime_paths.tmp_dir, config["eval_id"])
+    #scenario_tmp_dir = os.path.join(runtime_paths.tmp_dir, config["eval_id"])
+    scenario_tmp_dir = os.path.join(runtime_paths.tmp_dir)
     os.makedirs(scenario_output_dir, exist_ok=True)
     os.makedirs(scenario_tmp_dir, exist_ok=True)
     logger.warning(f"Outputs will be written to {scenario_output_dir}")

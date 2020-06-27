@@ -19,6 +19,16 @@ from armory.scenarios.base import Scenario
 
 logger = logging.getLogger(__name__)
 
+##############JATI -- for offline run in hpc
+import sys, pdb, os, time, datetime, torch
+#sys.path.insert(0, "/scratch/jati/GARD/ARMORY/armory_tmp/external/")
+#sys.path.insert(0, "/scratch/jati/GARD/ARMORY/armory_tmp/external/SincNet")
+#sys.path.insert(0, "/scratch/jati/GARD/ARMORY/armory_tmp/external/SAIL")
+sys.path.insert(0, "/Users/arindamjati/Documents/work/codes/armory_fork/armory_tmp/external/")
+sys.path.insert(0, "/Users/arindamjati/Documents/work/codes/armory_fork/armory_tmp/external/SincNet")
+sys.path.insert(0, "/Users/arindamjati/Documents/work/codes/armory_fork/armory_tmp/external/SAIL")
+
+#JATI
 
 class AudioClassificationTask(Scenario):
     def _evaluate(self, config: dict) -> dict:
@@ -72,6 +82,17 @@ class AudioClassificationTask(Scenario):
             logger.info(f"Transforming classifier with {defense_type} defense...")
             defense = load_defense_wrapper(config["defense"], classifier)
             classifier = defense()
+
+        #SAIL-JATI ----------------------------------
+        ts = time.time()
+        st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d-%H-%M-%S')
+        model_save_dir_ = os.path.join("/Users/arindamjati/Documents/work/codes/armory_fork/SAIL_ALR_models/", st+"/")
+        os.system("mkdir -p "+model_save_dir_)
+        torch.save(classifier._model._model.state_dict(), model_save_dir_+"/sail_alr_model_state_dict.pt")
+        torch.save(classifier._model._model, model_save_dir_+"/sail_alr_model.pt")
+        torch.save(classifier._optimizer.state_dict(), model_save_dir_+"/sail_alr_optim_state_dict.pt")
+        torch.save(classifier._optimizer, model_save_dir_+"/sail_alr_optim.pt")
+        #------------------------------------------- 
 
         classifier.set_learning_phase(False)
 

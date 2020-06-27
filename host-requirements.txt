@@ -11,18 +11,24 @@ pydub==0.23.1
 apache-beam==2.18.0
 pytest==5.3.5
 torchvision==0.5.0
-ffmpeg==4.2
+ffmpeg==1.4
 
 ### Begin TF1 required libraries
 tensorflow-gpu==1.15.0
 ### End TF1 required libraries
 
 ### Begin Pytorch required libraries
-pytorch==1.4
-torchvision==0.5.0
-cudatoolkit=10.1
+#pytorch==1.4
+#torchvision==0.5.0
+#cudatoolkit=10.1
 ### End Pytorch required libraries
 
 ### Begin TF2 required libraries
-tensorflow-gpu==2.1.0
+#tensorflow-gpu==2.1.0
 ### End TF2 required libraries
+
+#SAIL
+torchaudio==0.4.0
+numba==0.43.0
+llvmlite==0.32.1
+librosa==0.7.2
