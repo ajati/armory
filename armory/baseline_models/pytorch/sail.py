@@ -17,7 +17,7 @@ from armory.data.utils import maybe_download_weights_from_s3
 # Load model from USC SAIL external repo: https://github.com/usc-sail/gard-eval-june2020
 # This needs to be defined in your config's `external_github_repo` field to be
 # downloaded and placed on the PYTHONPATH
-from SAIL import dnn_models
+from ALR import dnn_models
 import pdb
 
 logger = logging.getLogger(__name__)

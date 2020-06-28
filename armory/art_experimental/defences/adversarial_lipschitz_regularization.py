@@ -10,7 +10,7 @@ from art.attacks.evasion.projected_gradient_descent import ProjectedGradientDesc
 
 logger = logging.getLogger(__name__)
 
-from SAIL.dev.models import ALR
+from ALR.dev.models import ALR
 import torch
 import pdb
 import numpy as np
